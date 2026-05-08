@@ -1,1 +1,24 @@
 @import "tailwindcss";
+
+@keyframes orix-marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.orix-marquee-track {
+  animation: orix-marquee 34s linear infinite;
+  will-change: transform;
+}
+
+.orix-marquee-track--partners {
+  animation-duration: 24s;
+}
+
+.orix-marquee-track:hover {
+  animation-play-state: paused;
+}
