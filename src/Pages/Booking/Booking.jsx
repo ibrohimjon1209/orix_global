@@ -1,13 +1,59 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiCalendar, FiClock, FiVideo, FiMapPin, FiChevronDown, FiChevronUp, FiUser, FiCheckCircle } from 'react-icons/fi';
+import { FiVideo, FiMapPin, FiChevronDown, FiChevronUp, FiUser, FiCheckCircle } from 'react-icons/fi';
 import { homeApi } from '../../api/api';
 import { useApiResource } from '../../hooks/useApiResource';
 import { getCurrentLang, localizeItem, sortByDisplayOrder } from '../../utils/localization';
 import office from './office.png'
 import online from './online.png'
 
+const UZBEKISTAN_SLUG = 'uzbekistan';
+
 const normalizeList = (data) => (Array.isArray(data) ? data : []);
+
+const getOfficeIdFromStaff = (staff) => {
+  const office = staff?.office;
+  if (office && typeof office === 'object') return office?.id;
+  return staff?.officeId ?? staff?.office_id ?? office;
+};
+
+const normalizeSearchText = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\u0400-\u04ff]+/gi, ' ')
+    .trim();
+
+const hasOfficeRelation = (staff) => {
+  const relatedOfficeId = getOfficeIdFromStaff(staff);
+  return (
+    (relatedOfficeId !== undefined && relatedOfficeId !== null && relatedOfficeId !== '') ||
+    Array.isArray(staff?.officeIds) ||
+    Array.isArray(staff?.office_ids)
+  );
+};
+
+const staffBelongsToOffice = (staff, officeId) => {
+  const relatedOfficeId = getOfficeIdFromStaff(staff);
+  if (relatedOfficeId !== undefined && relatedOfficeId !== null) {
+    return String(relatedOfficeId) === String(officeId);
+  }
+
+  const officeIds = staff?.officeIds ?? staff?.office_ids;
+  if (Array.isArray(officeIds)) {
+    return officeIds.some((id) => String(id) === String(officeId));
+  }
+
+  return true;
+};
+
+const staffMatchesOfficeText = (staff, officeItem) => {
+  const officeTokens = normalizeSearchText(`${officeItem?.name || ''} ${officeItem?.address || ''}`)
+    .split(' ')
+    .filter((token) => token.length > 3 && !['ofisi', 'offis', 'filiali', 'shahri'].includes(token));
+  const staffText = normalizeSearchText(`${staff?.full_name || ''} ${staff?.role || ''} ${staff?.bio || ''}`);
+
+  return officeTokens.some((token) => staffText.includes(token));
+};
 
 const getErrorMessage = (error) => {
   const data = error?.response?.data;
@@ -200,37 +246,56 @@ const Booking = () => {
   );
 
   const uzbekistanCountry = useMemo(
-    () => ({
-      id: 'uzbekistan',
-      name: "O'zbekiston",
-      value: offices?.[0]?.countrySlug || 'janubiy-koreya',
-    }),
-    [offices]
+    () =>
+      countries.find((country) => country?.slug === UZBEKISTAN_SLUG) || {
+        id: UZBEKISTAN_SLUG,
+        name: "O'zbekiston",
+        slug: UZBEKISTAN_SLUG,
+      },
+    [countries]
   );
 
   const visibleOffices = useMemo(
-    () => [
-      { id: offices?.[0]?.id || 1, name: 'Andijondagi offis' },
-      { id: offices?.[1]?.id || 2, name: 'Toshkentdagi offis' },
-    ],
+    () => offices.filter((office) => office?.countrySlug === UZBEKISTAN_SLUG),
     [offices]
   );
 
-  useEffect(() => {
-    if (!bookingData.country) {
-      setBookingData((prev) => ({ ...prev, country: uzbekistanCountry.value }));
+  const visibleStaffMembers = useMemo(() => {
+    const selectedOffice = visibleOffices.find((office) => String(office?.id) === String(bookingData.office)) || visibleOffices?.[0];
+    const selectedOfficeId = selectedOffice?.id;
+    const countryStaff = staffMembers.filter((staff) => staff?.countrySlug === UZBEKISTAN_SLUG);
+
+    if (bookingData.type === 'Online Meeting') return countryStaff;
+    if (!selectedOfficeId) return countryStaff;
+
+    if (countryStaff.some(hasOfficeRelation)) {
+      return countryStaff.filter((staff) => staffBelongsToOffice(staff, selectedOfficeId));
     }
-  }, [bookingData.country, uzbekistanCountry.value]);
+
+    const textMatchedStaff = countryStaff.filter((staff) => staffMatchesOfficeText(staff, selectedOffice));
+    return textMatchedStaff.length > 0 ? textMatchedStaff : countryStaff;
+  }, [bookingData.office, bookingData.type, staffMembers, visibleOffices]);
+
+  const officeMeetingImage = uzbekistanCountry?.imageUrl || office;
 
   useEffect(() => {
-    if (!bookingData.staffMember && staffMembers?.[0]?.id) {
+    if (bookingData.country !== UZBEKISTAN_SLUG) {
+      setBookingData((prev) => ({ ...prev, country: UZBEKISTAN_SLUG }));
+    }
+  }, [bookingData.country]);
+
+  useEffect(() => {
+    const selectedStaffExists = visibleStaffMembers.some((staff) => String(staff?.id) === String(bookingData.staffMember));
+
+    if (!selectedStaffExists) {
+      const nextStaff = visibleStaffMembers?.[0];
       setBookingData((prev) => ({
         ...prev,
-        staffMember: staffMembers[0].id,
-        staff: staffMembers[0].full_name,
+        staffMember: nextStaff?.id || '',
+        staff: nextStaff?.full_name || t.anyStaff,
       }));
     }
-  }, [bookingData.staffMember, staffMembers]);
+  }, [bookingData.staffMember, visibleStaffMembers, t.anyStaff]);
 
   useEffect(() => {
     const selectedOfficeExists = visibleOffices.some((office) => String(office?.id) === String(bookingData.office));
@@ -279,10 +344,13 @@ const Booking = () => {
     setSubmitting(true);
 
     try {
+      const selectedOffice = visibleOffices.find((office) => String(office?.id) === String(bookingData.office)) || visibleOffices?.[0];
+      const selectedStaff = visibleStaffMembers.find((staff) => String(staff?.id) === String(bookingData.staffMember)) || visibleStaffMembers?.[0];
+
       await homeApi.createBooking({
-        country: bookingData.country || uzbekistanCountry.value,
-        office: Number(bookingData.office) || Number(visibleOffices?.[0]?.id),
-        staffMember: Number(bookingData.staffMember) || Number(staffMembers?.[0]?.id),
+        country: UZBEKISTAN_SLUG,
+        office: Number(selectedOffice?.id) || undefined,
+        staffMember: Number(selectedStaff?.id) || undefined,
         serviceType: bookingData.type === 'Online Meeting' ? 'online' : 'office',
         scheduledDate: bookingData.scheduledDate,
         scheduledTime: bookingData.scheduledTime,
@@ -417,7 +485,7 @@ const Booking = () => {
               <div className="flex flex-col md:flex-row gap-8 justify-center w-full max-w-[800px]">
                 <div className="bg-white shadow-md w-full md:w-1/2 flex flex-col group hover:shadow-xl transition-shadow cursor-default rounded-md overflow-hidden">
                   <div className="h-[220px] w-full overflow-hidden">
-                    <img src={office} alt="Office" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={officeMeetingImage} alt="Office" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   </div>
                   <div className="p-6 pb-8 border-b border-gray-100">
                     <h3 className="text-xl font-bold text-[#274F94] mb-6">Office Meeting</h3>
@@ -455,30 +523,38 @@ const Booking = () => {
                 <div className="flex flex-col md:flex-row gap-6 mb-8">
                   <div className="flex-1">
                     <label className="block text-sm font-bold text-[#274F94] mb-2">{t.countryLabel}</label>
-                    <select className="w-full border border-gray-300 p-3 bg-white font-medium outline-none text-[#274F94] shadow-sm rounded-md focus:border-[#8F0810]" value={bookingData.country} onChange={(e) => setBookingData({...bookingData, country: e.target.value, office: '', location: t.anyLoc})}>
-                      <option value={uzbekistanCountry.value}>{uzbekistanCountry.name}</option>
+                    <select className="w-full border border-gray-300 p-3 bg-white font-medium outline-none text-[#274F94] shadow-sm rounded-md focus:border-[#8F0810]" value={bookingData.country} onChange={() => setBookingData({...bookingData, country: UZBEKISTAN_SLUG, office: '', location: t.anyLoc})}>
+                      <option value={UZBEKISTAN_SLUG}>{uzbekistanCountry.name}</option>
                     </select>
                   </div>
                   <div className={`flex-1 ${bookingData.type === 'Online Meeting' ? 'opacity-50 pointer-events-none' : ''}`}>
                     <label className="block text-sm font-bold text-[#274F94] mb-2">{t.locationLabel}</label>
                     <select className="w-full border border-gray-300 p-3 bg-white font-medium outline-none text-[#274F94] shadow-sm rounded-md focus:border-[#8F0810]" value={bookingData.office} onChange={(e) => {
                       const selected = visibleOffices.find((office) => String(office?.id) === e.target.value);
-                      setBookingData({...bookingData, office: e.target.value, location: selected?.name || t.anyLoc});
+                      setBookingData({...bookingData, office: e.target.value, location: selected?.name || t.anyLoc, staffMember: '', staff: t.anyStaff});
                     }}>
-                      {visibleOffices.map((office) => (
-                        <option key={office?.id} value={office?.id}>{office?.name}</option>
-                      ))}
+                      {visibleOffices.length > 0 ? (
+                        visibleOffices.map((office) => (
+                          <option key={office?.id} value={office?.id}>{office?.name}</option>
+                        ))
+                      ) : (
+                        <option value="">{t.noOffices}</option>
+                      )}
                     </select>
                   </div>
                   <div className="flex-1">
                     <label className="block text-sm font-bold text-[#274F94] mb-2">{t.staffLabel}</label>
                     <select className="w-full border border-gray-300 p-3 bg-white font-medium outline-none text-[#274F94] shadow-sm rounded-md focus:border-[#8F0810]" value={bookingData.staffMember} onChange={(e) => {
-                      const selected = staffMembers.find((staff) => String(staff?.id) === e.target.value);
+                      const selected = visibleStaffMembers.find((staff) => String(staff?.id) === e.target.value);
                       setBookingData({...bookingData, staffMember: e.target.value, staff: selected?.full_name || t.anyStaff});
                     }}>
-                      {staffMembers.map((staff) => (
-                        <option key={staff?.id} value={staff?.id}>{staff?.full_name}</option>
-                      ))}
+                      {visibleStaffMembers.length > 0 ? (
+                        visibleStaffMembers.map((staff) => (
+                          <option key={staff?.id} value={staff?.id}>{staff?.full_name}</option>
+                        ))
+                      ) : (
+                        <option value="">{t.anyStaff}</option>
+                      )}
                     </select>
                   </div>
                 </div>
