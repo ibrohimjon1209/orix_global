@@ -8,8 +8,31 @@ import office from './office.png'
 import online from './online.png'
 
 const UZBEKISTAN_SLUG = 'uzbekistan';
+const OFFICE_MEETING = 'Office Meeting';
+const ONLINE_MEETING = 'Online Meeting';
 
 const normalizeList = (data) => (Array.isArray(data) ? data : []);
+
+const localeByLang = {
+  uz: 'uz-UZ',
+  ru: 'ru-RU',
+  en: 'en-US',
+};
+
+const getDateParts = (dateValue) => {
+  const [year, month, day] = dateValue.split('-').map(Number);
+  return { year, month, day };
+};
+
+const getLocalDateFromValue = (dateValue) => {
+  const { year, month, day } = getDateParts(dateValue);
+  return new Date(year, month - 1, day);
+};
+
+const isSundayDate = (dateValue) => {
+  if (!dateValue) return false;
+  return getLocalDateFromValue(dateValue).getDay() === 0;
+};
 
 const getOfficeIdFromStaff = (staff) => {
   const office = staff?.office;
@@ -115,6 +138,7 @@ const Booking = () => {
       month: "May 2026",
       countryLabel: "Davlatni tanlang",
       noOffices: "Bu davlat uchun ofis mavjud emas",
+      weekendValidation: "Yakshanba kunlari uchrashuv mavjud emas.",
       daysNames: ["YAK","DSH","SESH","CHOR","PAY","JUM","SHAN"]
     },
     ru: {
@@ -157,6 +181,7 @@ const Booking = () => {
       month: "Май 2026",
       countryLabel: "Выберите страну",
       noOffices: "Для этой страны офисов нет",
+      weekendValidation: "В воскресенье встречи недоступны.",
       daysNames: ["ВС","ПН","ВТ","СР","ЧТ","ПТ","СБ"]
     },
     en: {
@@ -199,6 +224,7 @@ const Booking = () => {
       month: "May 2026",
       countryLabel: "Choose a country",
       noOffices: "No offices for this country",
+      weekendValidation: "Meetings are not available on Sundays.",
       daysNames: ["SUN","MON","TUE","WED","THU","FRI","SAT"]
     }
   }[lang];
@@ -265,7 +291,7 @@ const Booking = () => {
     const selectedOfficeId = selectedOffice?.id;
     const countryStaff = staffMembers.filter((staff) => staff?.countrySlug === UZBEKISTAN_SLUG);
 
-    if (bookingData.type === 'Online Meeting') return countryStaff;
+    if (bookingData.type === ONLINE_MEETING) return countryStaff;
     if (!selectedOfficeId) return countryStaff;
 
     if (countryStaff.some(hasOfficeRelation)) {
@@ -277,6 +303,37 @@ const Booking = () => {
   }, [bookingData.office, bookingData.type, staffMembers, visibleOffices]);
 
   const officeMeetingImage = uzbekistanCountry?.imageUrl || office;
+  const calendarBaseDate = useMemo(() => new Date(), []);
+  const calendarYear = calendarBaseDate.getFullYear();
+  const calendarMonthIndex = calendarBaseDate.getMonth();
+  const calendarLocale = localeByLang[lang] || localeByLang.en;
+  const calendarMonthLabel = useMemo(
+    () => new Intl.DateTimeFormat(calendarLocale, { month: 'long', year: 'numeric' }).format(calendarBaseDate),
+    [calendarBaseDate, calendarLocale]
+  );
+  const calendarDateFormatter = useMemo(
+    () => new Intl.DateTimeFormat(calendarLocale, { month: 'long', day: 'numeric', year: 'numeric' }),
+    [calendarLocale]
+  );
+  const calendarDays = useMemo(() => {
+    const daysInMonth = new Date(calendarYear, calendarMonthIndex + 1, 0).getDate();
+    const firstDayOfMonth = new Date(calendarYear, calendarMonthIndex, 1).getDay();
+    const leadingBlankCount = firstDayOfMonth === 0 ? 0 : firstDayOfMonth - 1;
+    const days = Array.from({ length: daysInMonth }, (_, index) => {
+      const day = index + 1;
+      const date = new Date(calendarYear, calendarMonthIndex, day);
+      const dateValue = `${calendarYear}-${String(calendarMonthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+      return {
+        day,
+        date,
+        dateValue,
+        displayDate: calendarDateFormatter.format(date),
+      };
+    }).filter(({ date }) => date.getDay() !== 0);
+
+    return { leadingBlankCount, days };
+  }, [calendarDateFormatter, calendarMonthIndex, calendarYear]);
 
   useEffect(() => {
     if (bookingData.country !== UZBEKISTAN_SLUG) {
@@ -324,6 +381,10 @@ const Booking = () => {
       alert(t.validation);
       return;
     }
+    if (step === 2 && isSundayDate(bookingData.scheduledDate)) {
+      alert(t.weekendValidation);
+      return;
+    }
     setStep((prev) => prev + 1);
   };
 
@@ -336,7 +397,12 @@ const Booking = () => {
       return;
     }
 
-    if (bookingData.type !== 'Online Meeting' && !bookingData.office) {
+    if (isSundayDate(bookingData.scheduledDate)) {
+      setSubmitError(t.weekendValidation);
+      return;
+    }
+
+    if (bookingData.type !== ONLINE_MEETING && !bookingData.office) {
       setSubmitError(t.officeValidation);
       return;
     }
@@ -347,11 +413,10 @@ const Booking = () => {
       const selectedOffice = visibleOffices.find((office) => String(office?.id) === String(bookingData.office)) || visibleOffices?.[0];
       const selectedStaff = visibleStaffMembers.find((staff) => String(staff?.id) === String(bookingData.staffMember)) || visibleStaffMembers?.[0];
 
-      await homeApi.createBooking({
+      const payload = {
         country: UZBEKISTAN_SLUG,
-        office: Number(selectedOffice?.id) || undefined,
         staffMember: Number(selectedStaff?.id) || undefined,
-        serviceType: bookingData.type === 'Online Meeting' ? 'online' : 'office',
+        serviceType: bookingData.type === ONLINE_MEETING ? 'online' : 'office',
         scheduledDate: bookingData.scheduledDate,
         scheduledTime: bookingData.scheduledTime,
         firstName: bookingData.firstName.trim(),
@@ -359,7 +424,13 @@ const Booking = () => {
         email: bookingData.email.trim(),
         phone: bookingData.phone.trim(),
         message: bookingData.message.trim(),
-      });
+      };
+
+      if (bookingData.type !== ONLINE_MEETING) {
+        payload.office = Number(selectedOffice?.id) || undefined;
+      }
+
+      await homeApi.createBooking(payload);
 
       setStep(4);
     } catch (error) {
@@ -388,23 +459,26 @@ const Booking = () => {
   ];
 
   const renderCalendar = () => {
-    const days = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31];
+    const workdayNames = t.daysNames.slice(1);
+
     return (
       <div className="w-full md:w-1/2 bg-white p-6 border border-gray-200 shadow-sm rounded-md">
-        <h4 className="font-bold text-center mb-6 text-[#274F94]">{t.month}</h4>
-        <div className="grid grid-cols-7 gap-1 text-center text-[10px] md:text-[11px] mb-2 font-bold text-gray-400">
-          {t.daysNames.map((d, i) => <div key={i}>{d}</div>)}
+        <h4 className="font-bold text-center mb-6 text-[#274F94]">{calendarMonthLabel}</h4>
+        <div className="grid grid-cols-6 gap-1 text-center text-[10px] md:text-[11px] mb-2 font-bold text-gray-400">
+          {workdayNames.map((d, i) => <div key={i}>{d}</div>)}
         </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium">
-          <div></div><div></div><div></div><div></div><div></div>
-          {days.map(d => (
+        <div className="grid grid-cols-6 gap-1 text-center text-sm font-medium">
+          {Array.from({ length: calendarDays.leadingBlankCount }, (_, index) => (
+            <div key={`blank-${index}`}></div>
+          ))}
+          {calendarDays.days.map(({ day, dateValue, displayDate }) => (
              <div 
-               key={d}
-               onClick={() => setBookingData({...bookingData, date: `May ${d}, 2026`, scheduledDate: `2026-05-${String(d).padStart(2, '0')}`})}
+               key={dateValue}
+               onClick={() => setBookingData({...bookingData, date: displayDate, scheduledDate: dateValue, time: '', scheduledTime: ''})}
                className={`p-2.5 cursor-pointer rounded-full transition-colors flex items-center justify-center 
-               ${bookingData.date === `May ${d}, 2026` ? 'bg-[#8F0810] text-white shadow-md font-bold' : 'text-[#274F94] hover:bg-red-50'}`}
+               ${bookingData.scheduledDate === dateValue ? 'bg-[#8F0810] text-white shadow-md font-bold' : 'text-[#274F94] hover:bg-red-50'}`}
              >
-               {d}
+               {day}
              </div>
           ))}
         </div>
@@ -425,7 +499,7 @@ const Booking = () => {
       )}
 
       <div className="flex flex-col gap-3 mb-6">
-        {bookingData.type === 'Online Meeting' ? (
+        {bookingData.type === ONLINE_MEETING ? (
           <div className="flex items-center gap-2 text-sm font-bold text-[#274F94] bg-gray-100 px-3 py-2 rounded-md border border-gray-300">
             <FiVideo className="text-[#8F0810]"/> {t.availOnline}
           </div>
@@ -488,11 +562,11 @@ const Booking = () => {
                     <img src={officeMeetingImage} alt="Office" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   </div>
                   <div className="p-6 pb-8 border-b border-gray-100">
-                    <h3 className="text-xl font-bold text-[#274F94] mb-6">Office Meeting</h3>
+                    <h3 className="text-xl font-bold text-[#274F94] mb-6">{OFFICE_MEETING}</h3>
                     <p className="text-gray-500 text-sm font-medium">{t.officeTime}</p>
                   </div>
                   <div className="p-6">
-                    <button onClick={() => handleSelectService('Office Meeting')} className="bg-[#8F0810] hover:bg-[#6a060b] text-white px-6 py-2 rounded-sm font-bold text-sm shadow-md">{t.bookNow}</button>
+                    <button onClick={() => handleSelectService(OFFICE_MEETING)} className="bg-[#8F0810] hover:bg-[#6a060b] text-white px-6 py-2 rounded-sm font-bold text-sm shadow-md">{t.bookNow}</button>
                   </div>
                 </div>
 
@@ -501,11 +575,11 @@ const Booking = () => {
                     <img src={online} alt="Online" className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
                   </div>
                   <div className="p-6 pb-8 border-b border-gray-100">
-                    <h3 className="text-xl font-bold text-[#274F94] mb-6">Online Meeting</h3>
+                    <h3 className="text-xl font-bold text-[#274F94] mb-6">{ONLINE_MEETING}</h3>
                     <p className="text-gray-500 text-sm font-medium">{t.officeTime}</p>
                   </div>
                   <div className="p-6">
-                    <button onClick={() => handleSelectService('Online Meeting')} className="bg-[#8F0810] hover:bg-[#6a060b] text-white px-6 py-2 rounded-sm font-bold text-sm shadow-md">{t.bookNow}</button>
+                    <button onClick={() => handleSelectService(ONLINE_MEETING)} className="bg-[#8F0810] hover:bg-[#6a060b] text-white px-6 py-2 rounded-sm font-bold text-sm shadow-md">{t.bookNow}</button>
                   </div>
                 </div>
               </div>
@@ -527,7 +601,7 @@ const Booking = () => {
                       <option value={UZBEKISTAN_SLUG}>{uzbekistanCountry.name}</option>
                     </select>
                   </div>
-                  <div className={`flex-1 ${bookingData.type === 'Online Meeting' ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <div className={`flex-1 ${bookingData.type === ONLINE_MEETING ? 'opacity-50 pointer-events-none' : ''}`}>
                     <label className="block text-sm font-bold text-[#274F94] mb-2">{t.locationLabel}</label>
                     <select className="w-full border border-gray-300 p-3 bg-white font-medium outline-none text-[#274F94] shadow-sm rounded-md focus:border-[#8F0810]" value={bookingData.office} onChange={(e) => {
                       const selected = visibleOffices.find((office) => String(office?.id) === e.target.value);
@@ -641,7 +715,7 @@ const Booking = () => {
                   <p className="text-sm font-medium text-[#274F94] mb-2"><strong>{t.clientInfo.replace(':','')}</strong> {bookingData.firstName} {bookingData.lastName}</p>
                   <p className="text-sm font-medium text-[#274F94] mb-2"><strong>{t.serviceType}</strong> {bookingData.type}</p>
                   <p className="text-sm font-medium text-[#274F94] mb-2"><strong>{t.staffStr}</strong> {bookingData.staff}</p>
-                  {bookingData.type !== 'Online Meeting' && (
+                  {bookingData.type !== ONLINE_MEETING && (
                      <p className="text-sm font-medium text-[#274F94] mb-2"><strong>{t.locStr}</strong> {bookingData.location}</p>
                   )}
                   <p className="text-sm font-medium text-[#274F94]"><strong>{t.timeStr}</strong> {bookingData.date} | {bookingData.time}</p>

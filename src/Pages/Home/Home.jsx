@@ -169,7 +169,7 @@ const Home = () => {
       [servicesQuery.data, lang]
    );
 
-   const about = useMemo(() => {
+   const  about = useMemo(() => {
       if (!aboutQuery.data || aboutQuery.data?.is_active === false) return null;
       return localizeItem(aboutQuery.data, ['title', 'content'], lang);
    }, [aboutQuery.data, lang]);
@@ -313,7 +313,7 @@ const Home = () => {
                               {t.bookBtn}
                            </motion.button>
                         </div>
-                        <div className="md:w-1/2 h-[50vh] md:h-[80vh] flex justify-center items-center right-0 top-0 absolute md:relative overflow-hidden opacity-30 md:opacity-100 mt-10 md:mt-0 pt-0 !items-end">
+                        <div className="pb-[50px] md:w-1/2 h-[50vh] md:h-[80vh] flex justify-center items-center right-0 top-0 absolute md:relative overflow-hidden opacity-30 md:opacity-100 mt-10 md:mt-0 pt-0 !items-end">
                            <img src={banner?.imageUrl || IMAGE_PLACEHOLDER} onError={setImageFallback} alt={banner?.title || 'Orix Global'} className="h-[90%] md:h-[85%] w-[90%] md:w-auto object-cover block md:rounded-b-full md:rounded-t-[300px] shadow-2xl z-0 border-[10px] border-white" loading={idx === 0 ? 'eager' : 'lazy'} />
                         </div>
                      </div>
@@ -353,7 +353,7 @@ const Home = () => {
          <section id="about" className="w-full py-20 bg-white">
             <div className="max-w-[1300px] mx-auto flex flex-col lg:flex-row items-center gap-12 px-6 lg:px-12">
                <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="w-full lg:w-1/2 relative h-[400px] md:h-[600px] bg-gray-100 flex items-center justify-center rounded-md overflow-hidden shrink-0">
-                  <img src={about?.imageUrl || IMAGE_PLACEHOLDER} onError={setImageFallback} alt={about?.title || 'About'} className="w-full h-full object-cover" loading="lazy" />
+                  <img src={about?.imageUrl || IMAGE_PLACEHOLDER} onError={setImageFallback} alt={about?.title || 'About'} className="w-full h-full object-cover border-[1px] border-[#8F0810] rounded-[15px]" loading="lazy" />
                </motion.div>
                <motion.div initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="w-full lg:w-1/2 pl-0 lg:pl-10">
                   <p className="text-[#8F0810] font-bold tracking-widest text-xs mb-4 uppercase">{t.aboutPre}</p>
@@ -376,7 +376,7 @@ const Home = () => {
                   <div className="flex gap-4 items-center flex-wrap">
                      {normalizeList(about?.accreditations).map((item) => (
                         <a key={item?.id || item?.imageUrl} href={item?.websiteUrl || '#'} target="_blank" rel="noreferrer" className="inline-flex">
-                           <img src={item?.imageUrl || IMAGE_PLACEHOLDER} onError={setImageFallback} alt="Accreditation" className="h-10 object-contain opacity-70" loading="lazy" />
+                           <img src={item?.imageUrl || IMAGE_PLACEHOLDER} onError={setImageFallback} alt="Accreditation" className="h-30 object-contain opacity-70" loading="lazy" />
                         </a>
                      ))}
                   </div>
@@ -490,13 +490,13 @@ const Home = () => {
                <h2 className="text-2xl md:text-4xl font-extrabold text-[#274F94]">{t.partTitle}</h2>
             </div>
             <div className="flex overflow-hidden">
-               <div className="orix-marquee-track orix-marquee-track--partners flex whitespace-nowrap items-center min-w-max mb-10">
+               <div className=" orix-marquee-track orix-marquee-track--partners flex whitespace-nowrap items-center min-w-max mb-10">
                   {(partnersQuery.loading ? Array.from({ length: 10 }, (_, index) => ({ id: `loading-${index}` })) : [...partnerMarqueeBase, ...partnerMarqueeBase]).map((partner, i) => (
-                     <a key={i} href={partner?.websiteUrl || '#'} target="_blank" rel="noreferrer" className="w-[180px] mx-8 px-4 opacity-70 hover:opacity-100 transition-opacity flex items-center justify-center bg-gray-50 h-[100px] rounded-md shadow-sm border border-gray-100">
+                     <a key={i} href={partner?.websiteUrl || '#'} target="_blank" rel="noreferrer" className="w-[180px] h-[200px] mx-8  opacity-70 hover:opacity-100 transition-opacity flex items-center justify-center bg-gray-50 h-[100px] rounded-md shadow-sm border border-gray-100">
                         {partnersQuery.loading ? (
-                           <div className="w-full h-[60px] bg-[#274F94]/10 animate-pulse rounded-md"></div>
+                           <div className="w-full h-full bg-[#274F94]/10 animate-pulse rounded-md"></div>
                         ) : (
-                           <img src={partner?.logoUrl || IMAGE_PLACEHOLDER} onError={setImageFallback} alt={partner?.name || 'Partner'} className="max-h-[60px] object-contain w-full grayscale hover:grayscale-0 transition-all" loading="lazy" />
+                           <img src={partner?.logoUrl || IMAGE_PLACEHOLDER} onError={setImageFallback} alt={partner?.name || 'Partner'} className="max-h-full object-contain w-full grayscale hover:grayscale-0 transition-all" loading="lazy" />
                         )}
                      </a>
                   ))}

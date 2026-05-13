@@ -13,7 +13,7 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    const lang = localStorage.getItem('lang') || 'uz';
+    const lang = localStorage.getItem('lang') || 'en';
     config.headers['Accept-Language'] = lang;
     return config;
   },
