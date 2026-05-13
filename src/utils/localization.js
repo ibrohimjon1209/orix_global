@@ -4,7 +4,7 @@ const toTitle = (value) => value.charAt(0).toUpperCase() + value.slice(1);
 
 export const getCurrentLang = () => {
   const lang = localStorage.getItem('lang');
-  return SUPPORTED_LANGS.includes(lang) ? lang : 'uz';
+  return SUPPORTED_LANGS.includes(lang) ? lang : 'en';
 };
 
 export const pickLocalized = (item, field, lang = getCurrentLang()) => {
