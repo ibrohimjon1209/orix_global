@@ -22,7 +22,7 @@ const Maps = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch('https://orix.mukhriddin.uz/api/offices/');
+        const res = await fetch('https://api.orix-global.uz/api/offices/');
 
         if (!res.ok) {
           throw new Error(`HTTP error! Status: ${res.status}`);
@@ -30,14 +30,14 @@ const Maps = () => {
 
         const data = await res.json();
 
-        // API massiv qaytarayotgani uchun to'g'ridan-to'g'ri ishlatamiz
+        // API massiv qaytarayotgan bo'lsa
         const officesList = Array.isArray(data) ? data : data?.data || [];
         
         setOffices(officesList);
         
       } catch (err) {
         console.error("Ofis API xatosi:", err);
-        setError(err.message);
+        setError(err.message || "Ofislar yuklashda xatolik yuz berdi");
       } finally {
         setLoading(false);
       }
@@ -61,14 +61,13 @@ const Maps = () => {
       <div className="max-w-[1200px] mx-auto w-full h-[300px] mt-16 rounded-xl overflow-hidden shadow-md border border-gray-200 bg-gray-100 flex items-center justify-center flex-col">
         <p className="text-red-600 font-medium">Ofislar topilmadi</p>
         {error && <p className="text-sm text-gray-500 mt-2">{error}</p>}
-        <p className="text-xs text-gray-400 mt-4">API: https://orix.mukhriddin.uz/api/offices/</p>
       </div>
     );
   }
 
   const center = [
-    parseFloat(offices[0].latitude),
-    parseFloat(offices[0].longitude)
+    parseFloat(offices[0]?.latitude || 41.3111),
+    parseFloat(offices[0]?.longitude || 69.2797)
   ];
 
   return (
@@ -81,7 +80,7 @@ const Maps = () => {
       <div className="w-full h-[450px] rounded-2xl overflow-hidden shadow-lg border border-gray-200 mb-10">
         <MapContainer
           center={center}
-          zoom={5}
+          zoom={6}
           style={{ height: '100%', width: '100%' }}
         >
           <TileLayer
