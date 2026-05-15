@@ -282,8 +282,8 @@ const Home = () => {
             <Swiper modules={[Autoplay, Pagination]} autoplay={{ delay: 5000 }} pagination={{ clickable: true }} className="w-full h-full">
                {(bannersQuery.loading ? [{ id: 'loading' }] : banners.length ? banners : [{ id: 'empty', title: t.hero2, description: t.heroDesc, imageUrl: IMAGE_PLACEHOLDER }]).map((banner, idx) => (
                   <SwiperSlide key={banner?.id || idx}>
-                     <div className="w-full h-full flex flex-col md:flex-row items-center max-w-[1400px] mx-auto px-6 md:px-12">
-                        <div className="md:w-1/2 pt-10 md:pt-0 pb-10 z-10 relative">
+                     <div className="w-full h-full px-[30px] flex flex-col md:mb-[0px] md:flex-row items-center max-w-[1400px] mx-auto px md:px-12">
+                        <div className="mx-3 md:w-1/2 pt-10 md:pt-0 pb-10 z-10 relative">
                            {bannersQuery.loading ? (
                               <div className="animate-pulse">
                                  <div className="h-14 md:h-20 bg-[#274F94]/10 rounded-md mb-4 max-w-[620px]"></div>
@@ -313,8 +313,8 @@ const Home = () => {
                               {t.bookBtn}
                            </motion.button>
                         </div>
-                        <div className="pb-[50px] md:w-1/2 h-[50vh] md:h-[80vh] flex justify-center items-center right-0 top-0 absolute md:relative overflow-hidden opacity-30 md:opacity-100 mt-10 md:mt-0 pt-0 !items-end">
-                           <img src={banner?.imageUrl || IMAGE_PLACEHOLDER} onError={setImageFallback} alt={banner?.title || 'Orix Global'} className="h-[90%] md:h-[85%] w-[90%] md:w-auto object-cover block md:rounded-b-full md:rounded-t-[300px] shadow-2xl z-0 border-[10px] border-white" loading={idx === 0 ? 'eager' : 'lazy'} />
+                        <div className="mb-[40px] pb-[50px] w-full md:w-1/2 h-[50vh] md:h-[80vh] flex justify-center items-center  md:relative overflow-hidden opacity-30 md:opacity-100 mt-10 md:mt-0 pt-0 !items-end">
+                           <img src={banner?.imageUrl || IMAGE_PLACEHOLDER} onError={setImageFallback} alt={banner?.title || 'Orix Global'} className="h-[90%] md:h-[85%] w-full object-cover block md:rounded-b-full md:rounded-t-[300px] shadow-2xl z-0 border-[10px] border-white" loading={idx === 0 ? 'eager' : 'lazy'} />
                         </div>
                      </div>
                   </SwiperSlide>
@@ -384,7 +384,7 @@ const Home = () => {
             </div>
          </section>
 
-         <section id="universities" className="w-full py-24 bg-white px-6">
+         <section id="universities" className="w-full pt-24 bg-white px-6">
             <div className="max-w-[1300px] mx-auto text-center">
                <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn} className="text-[#8F0810] font-bold tracking-widest text-xs uppercase mb-3">{t.locPre}</motion.p>
                <motion.h2 initial="hidden" whileInView="visible" viewport={{ once: true }} transition={{ delay: 0.2 }} variants={fadeIn} className="text-2xl md:text-4xl font-extrabold text-[#274F94] mb-12 flex flex-col items-center">
