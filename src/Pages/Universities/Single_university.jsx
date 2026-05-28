@@ -22,9 +22,9 @@ const Single_university = () => {
   const selectedCity = location.state?.cityName || location.state?.city || 'Universitetlar';
 
   const t = {
-    uz: { uniTitle: 'Universitetlar', visit: 'Saytga kirish', rank: 'Reyting', empty: 'Bu shahar uchun universitetlar topilmadi.' },
-    ru: { uniTitle: 'Университеты', visit: 'Вебсайт', rank: 'Рейтинг', empty: 'Для этого города университеты не найдены.' },
-    en: { uniTitle: 'Universities', visit: 'Visit Website', rank: 'Rank', empty: 'No universities found for this city.' },
+    uz: { uniTitle: "Universitetlar", visit: "Saytga kirish", rank: "Reyting", empty: "Bu shahar uchun universitetlar topilmadi.", fakeDesc: "Bu universitet haqida batafsil ma'lumot tez orada qo'shiladi." },
+    ru: { uniTitle: "Университеты", visit: "Вебсайт", rank: "Рейтинг", empty: "Для этого города университеты не найдены.", fakeDesc: "Подробная информация об этом университете скоро будет добавлена." },
+    en: { uniTitle: "Universities", visit: "Visit Website", rank: "Rank", empty: "No universities found for this city.", fakeDesc: "Detailed information about this university will be added soon." },
   }[lang];
 
   const universitiesQuery = useApiResource(homeApi.getUniversities);
@@ -37,7 +37,7 @@ const Single_university = () => {
     () =>
       normalizeList(universitiesQuery.data)
         .filter((university) => (!citySlug ? true : university?.citySlug === citySlug))
-        .map((university) => localizeItem(university, ['name', 'location', 'cityName'], lang))
+        .map((university) => localizeItem(university, ['name', 'location', 'cityName', 'about'], lang))
         .sort((a, b) => (a?.rank ?? 9999) - (b?.rank ?? 9999)),
     [universitiesQuery.data, citySlug, lang]
   );
@@ -78,15 +78,19 @@ const Single_university = () => {
                   <div className="flex justify-between items-center mb-3">
                     <p className="text-[#274F94] opacity-80 text-[11px] md:text-xs font-semibold truncate xl:max-w-[120px]">{uni?.location || uni?.cityName}</p>
                     {uni?.rank && (
-                      <div className="bg-blue-50 text-[#274F94] font-bold text-[10px] px-2 py-1 rounded-full flex items-center gap-1 shrink-0 border border-blue-100">
-                        <span className="text-[#274F94] text-[12px]">*</span> {t.rank}: {uni.rank}
+                      <div className="flex items-center gap-1.5 shrink-0 bg-white border border-orange-200 px-2 py-0.5 rounded-full shadow-sm">
+                        <img src="/qs small new.png" alt="QS" className="h-[18px] w-[18px] object-contain rounded-[3px]" />
+                        <span className="font-bold text-[#274F94] text-[11px]">#{uni.rank}</span>
                       </div>
                     )}
                   </div>
 
-                  <h3 className="text-[16px] md:text-[18px] font-bold text-[#274F94] leading-tight mb-4 flex-grow line-clamp-2">
+                  <h3 className="text-[16px] md:text-[18px] font-bold text-[#274F94] leading-tight mb-2 line-clamp-2">
                     {uni?.name}
                   </h3>
+                  <p className="text-[11px] text-[#274F94] opacity-55 leading-relaxed mb-3 line-clamp-2 flex-grow">
+                    {uni?.about || t.fakeDesc}
+                  </p>
 
                   <div className="flex items-center gap-2 mt-auto">
                     <a href={uni?.websiteUrl || '#'} target="_blank" rel="noreferrer" className="bg-[#8F0810] hover:bg-[#6a060b] text-white flex-1 text-[11px] font-bold py-2 rounded-full flex justify-center items-center gap-1 transition-colors">

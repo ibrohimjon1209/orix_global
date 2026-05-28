@@ -24,18 +24,38 @@ const Universities = () => {
 
   const t = {
     uz: {
-      pre: 'Universitetlar',
-      title: 'Davlat bo‘yicha shaharlar',
-      countriesTitle: 'Davlatni tanlang',
-      search: 'Universitet nomi bo‘yicha qidirish...',
-      cities: 'Shaharlar',
-      universities: 'universitet',
-      noCities: 'Bu davlat uchun shaharlar topilmadi.',
-      noResults: 'Universitet topilmadi.',
-      open: 'Universitetlarni ko‘rish',
+      pre: "Universitetlar",
+      title: "Davlat bo’yicha shaharlar",
+      countriesTitle: "Davlatni tanlang",
+      search: "Shahar bo’yicha qidirish...",
+      cities: "Shaharlar",
+      universities: "universitet",
+      noCities: "Bu davlat uchun shaharlar topilmadi.",
+      noResults: "Shahar topilmadi.",
+      open: "Universitetlarni ko’rish",
     },
-    ru: { /* ... o'zingizning tarjimangiz ... */ },
-    en: { /* ... */ },
+    ru: {
+      pre: "Университеты",
+      title: "Города по стране",
+      countriesTitle: "Выберите страну",
+      search: "Поиск по городу...",
+      cities: "Городов",
+      universities: "университетов",
+      noCities: "Городов для этой страны не найдено.",
+      noResults: "Город не найден.",
+      open: "Посмотреть университеты",
+    },
+    en: {
+      pre: "Universities",
+      title: "Cities by Country",
+      countriesTitle: "Select a Country",
+      search: "Search by city...",
+      cities: "Cities",
+      universities: "universities",
+      noCities: "No cities found for this country.",
+      noResults: "City not found.",
+      open: "View Universities",
+    },
   }[lang];
 
   const countriesQuery = useApiResource(homeApi.getCountries);
@@ -107,15 +127,13 @@ const Universities = () => {
     [universities, countryCitySlugs]
   );
 
-  const searchResults = useMemo(() => {
+  const filteredCities = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return [];
-    return countryUniversities.filter((university) =>
-      `${university?.name || ''} ${university?.cityName || ''} ${university?.location || ''}`
-        .toLowerCase()
-        .includes(query)
+    if (!query) return countryCities;
+    return countryCities.filter((city) =>
+      (city?.name || '').toLowerCase().includes(query)
     );
-  }, [countryUniversities, search]);
+  }, [countryCities, search]);
 
   const selectCountry = (country) => {
     setSelectedCountrySlug(country?.slug || '');
@@ -192,11 +210,11 @@ const Universities = () => {
                   <div key={i} className="h-[170px] bg-white rounded-lg animate-pulse" />
                 ))}
               </div>
-            ) : countryCities.length === 0 ? (
-              <p className="text-[#274F94] opacity-70">{t.noCities}</p>
+            ) : filteredCities.length === 0 ? (
+              <p className="text-[#274F94] opacity-70">{search.trim() ? t.noResults : t.noCities}</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {countryCities.map((city) => (
+                {filteredCities.map((city) => (
                   <motion.div
                     key={city?.id || city?.slug}
                     whileHover={{ y: -4 }}

@@ -58,7 +58,7 @@ const Home = () => {
          heroDesc: "Orix Global Consulting - yorqin kelajak sari ko'prik",
          bookBtn: "Uchrashuv belgilash",
          servicesPre: "Xizmatlar",
-         servicesTitle: "Koreyadagi ta'limingizni yangi bosqichga olib chiqamiz",
+         servicesTitle: "Xalqaro ta’lim bilan yangi imkoniyatlar sari",
          s1: "Dastlabki Konsultatsiya", s2: "Universitet va dasturlarni tanlash", s3: "Kerakli hujjatlarni yig'ish va yuborish", s4: "Universitetga qabul", s5: "Safarni rejalashtirish va viza olish",
          aboutPre: "Biz haqimizda", aboutTitle: "Orix Global Consulting",
          aboutP1: "Orix Global Consulting - bu intiluvchan talabalar va Janubiy Koreyadagi xalqaro darajadagi ta'lim o'rtasidagi ko'prikdir. Bizning jamoamiz xorijda ta'lim olish sohasida yetakchi mutaxassislardan iborat.",
@@ -83,7 +83,7 @@ const Home = () => {
          heroDesc: "Orix Global Consulting - ваш мост в светлое будущее",
          bookBtn: "Записаться на консультацию",
          servicesPre: "Услуги",
-         servicesTitle: "Академический успех в Корее",
+         servicesTitle: "На пути к новым возможностям в сфере международного образования.",
          s1: "Первичная консультация", s2: "Подбор университетов и программ", s3: "Сбор и отправка необходимых документов", s4: "Поступление в университет", s5: "Планирование поездки и получение визы",
          aboutPre: "О нас", aboutTitle: "Orix Global Consulting",
          aboutP1: "Orix Global Consulting — это главное агентство, объединяющее амбициозных студентов и образование мирового уровня в Южной Корее. Мы - лидеры в сфере зарубежного образования.",
@@ -108,7 +108,7 @@ const Home = () => {
          heroDesc: "Orix Global Consulting - Your bridge to a brighter future",
          bookBtn: "Book a consultation",
          servicesPre: "Services",
-         servicesTitle: "Taking Your Education to the Next Level in Korea",
+         servicesTitle: "Towards new opportunities with international education",
          s1: "Primary Consultation", s2: "Selection of Universities and Programs", s3: "Collecting and Sending Documents", s4: "Admission to the University", s5: "Planning a Trip and Obtaining a Visa",
          aboutPre: "About Us", aboutTitle: "Orix Global Consulting",
          aboutP1: "Orix Global Consulting is a premier agency dedicated to bridging the gap between ambitious students and world-class education in South Korea.",
@@ -238,7 +238,12 @@ const Home = () => {
       []
    );
 
-   const getServiceIcon = (icon, index) => serviceIconMap[String(icon || '').toLowerCase()] || serviceIcons[index % serviceIcons.length];
+   const getServiceIcon = (icon, index) => {
+      if (icon && (String(icon).startsWith('http') || String(icon).startsWith('/'))) {
+         return <img src={icon} alt="service" className="w-10 h-10 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />;
+      }
+      return serviceIconMap[String(icon || '').toLowerCase()] || serviceIcons[index % serviceIcons.length];
+   };
 
    const handleContactChange = (event) => {
       const { name, value } = event.target;
@@ -496,7 +501,7 @@ const Home = () => {
                         {partnersQuery.loading ? (
                            <div className="w-full h-full bg-[#274F94]/10 animate-pulse rounded-md"></div>
                         ) : (
-                           <img src={partner?.logoUrl || IMAGE_PLACEHOLDER} onError={setImageFallback} alt={partner?.name || 'Partner'} className="max-h-full object-contain w-full grayscale hover:grayscale-0 transition-all" loading="lazy" />
+                           <img src={partner?.logoUrl || IMAGE_PLACEHOLDER} onError={setImageFallback} alt={partner?.name || 'Partner'} className="max-h-full object-contain w-full transition-all" loading="lazy" />
                         )}
                      </a>
                   ))}
@@ -563,7 +568,7 @@ const Home = () => {
             </div>
 
             {/* MAP - Placed directly under the contact section */}
-            <Maps />
+            <Maps className='z-0' />
          </section>
 
       </div>

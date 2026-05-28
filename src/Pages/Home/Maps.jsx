@@ -32,9 +32,9 @@ const Maps = () => {
 
         // API massiv qaytarayotgan bo'lsa
         const officesList = Array.isArray(data) ? data : data?.data || [];
-        
+
         setOffices(officesList);
-        
+
       } catch (err) {
         console.error("Ofis API xatosi:", err);
         setError(err.message || "Ofislar yuklashda xatolik yuz berdi");
@@ -71,13 +71,13 @@ const Maps = () => {
   ];
 
   return (
-    <div className="max-w-[1200px] mx-auto px-6 mt-16">
+    <div className="max-w-[1200px] mx-auto px-6 mt-16 ">
       <div className="text-center mb-8">
         <h3 className="text-3xl font-bold text-[#274F94]">Bizning Ofislarimiz</h3>
       </div>
 
       {/* Xarita */}
-      <div className="w-full h-[450px] rounded-2xl overflow-hidden shadow-lg border border-gray-200 mb-10">
+      <div className="w-full h-[450px] rounded-2xl overflow-hidden shadow-lg border border-gray-200 mb-10" style={{ isolation: 'isolate', zIndex: 0 }}>
         <MapContainer
           center={center}
           zoom={6}
@@ -107,7 +107,7 @@ const Maps = () => {
           <div key={office.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h4 className="font-bold text-xl text-[#274F94]">{office.name}</h4>
             <p className="text-[#274F94] mt-2">{office.address}</p>
-            
+
             <a
               href={`https://www.google.com/maps?q=${office.latitude},${office.longitude}`}
               target="_blank"
