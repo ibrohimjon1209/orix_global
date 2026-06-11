@@ -10,6 +10,7 @@ export const homeApi = {
   getOffices: (config) => apiClient.get('/offices/', config).then(unwrap),
   getCities: (config) => apiClient.get('/cities/', config).then(unwrap),
   getUniversities: (config) => apiClient.get('/universities/', config).then(unwrap),
+  getUniversityDetail: (slug, config) => apiClient.get(`/universities/${slug}/`, config).then(unwrap),
   getStaffMembers: (config) => apiClient.get('/staff-members/', config).then(unwrap),
   getGallery: (config) => apiClient.get('/gallary/', config).then(unwrap),
   getPartners: (config) => apiClient.get('/partners/', config).then(unwrap),

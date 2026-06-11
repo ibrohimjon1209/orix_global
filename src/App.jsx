@@ -6,6 +6,7 @@ import Footer from './Pages/Footer/Footer';
 import Home from './Pages/Home/Home';
 import Universities from './Pages/Universities/Universities';
 import Single_university from './Pages/Universities/Single_university';
+import University_detail from './Pages/Universities/University_detail';
 import Events from './Pages/Events/Events';
 import News from './Pages/News/News';
 import Single_news from './Pages/News/Single_news';
@@ -55,6 +56,7 @@ const App = () => {
             <Route path="/single_news" element={<PageTransitionWrapper><Single_news /></PageTransitionWrapper>} />
             <Route path="/universities" element={<PageTransitionWrapper><Universities /></PageTransitionWrapper>} />
             <Route path="/single_university" element={<PageTransitionWrapper><Single_university /></PageTransitionWrapper>} />
+            <Route path="/universities/:slug" element={<PageTransitionWrapper><University_detail /></PageTransitionWrapper>} />
             <Route path="/booking" element={<PageTransitionWrapper><Booking /></PageTransitionWrapper>} />
 
             <Route path="*" element={<PageTransitionWrapper><PageWrapper title="404 - Not Found" bgColor="#1e293b" /></PageTransitionWrapper>} />

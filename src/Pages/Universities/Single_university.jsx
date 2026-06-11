@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { homeApi } from '../../api/api';
 import { useApiResource } from '../../hooks/useApiResource';
@@ -17,14 +17,15 @@ const setImageFallback = (event) => {
 
 const Single_university = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const lang = getCurrentLang();
   const citySlug = location.state?.citySlug;
   const selectedCity = location.state?.cityName || location.state?.city || 'Universitetlar';
 
   const t = {
-    uz: { uniTitle: "Universitetlar", visit: "Saytga kirish", rank: "Reyting", empty: "Bu shahar uchun universitetlar topilmadi.", fakeDesc: "Bu universitet haqida batafsil ma'lumot tez orada qo'shiladi." },
-    ru: { uniTitle: "Университеты", visit: "Вебсайт", rank: "Рейтинг", empty: "Для этого города университеты не найдены.", fakeDesc: "Подробная информация об этом университете скоро будет добавлена." },
-    en: { uniTitle: "Universities", visit: "Visit Website", rank: "Rank", empty: "No universities found for this city.", fakeDesc: "Detailed information about this university will be added soon." },
+    uz: { uniTitle: "Universitetlar", visit: "Saytga kirish", details: "Batafsil ma'lumot", rank: "Reyting", empty: "Bu shahar uchun universitetlar topilmadi.", fakeDesc: "Bu universitet haqida batafsil ma'lumot tez orada qo'shiladi." },
+    ru: { uniTitle: "Университеты", visit: "Вебсайт", details: "Подробнее", rank: "Рейтинг", empty: "Для этого города университеты не найдены.", fakeDesc: "Подробная информация об этом университете скоро будет добавлена." },
+    en: { uniTitle: "Universities", visit: "Visit Website", details: "More Details", rank: "Rank", empty: "No universities found for this city.", fakeDesc: "Detailed information about this university will be added soon." },
   }[lang];
 
   const universitiesQuery = useApiResource(homeApi.getUniversities);
@@ -68,7 +69,8 @@ const Single_university = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: (index % 10) * 0.05 }}
-                className="bg-white rounded-[16px] border border-gray-100 shadow-sm hover:shadow-lg transition-all flex flex-col sm:flex-row xl:flex-col overflow-hidden h-[300px] xl:h-[350px]"
+                onClick={() => navigate(`/universities/${uni?.slug}`, { state: { citySlug, cityName: selectedCity } })}
+                className="bg-white rounded-[16px] border border-gray-100 shadow-sm hover:shadow-lg transition-all flex flex-col sm:flex-row xl:flex-col overflow-hidden h-[330px] xl:h-[380px] cursor-pointer"
               >
                 <div className="w-full sm:w-[40%] xl:w-full h-[150px] sm:h-full xl:h-[160px] bg-gray-200 shrink-0">
                   <img src={uni?.imageUrl || IMAGE_PLACEHOLDER} onError={setImageFallback} alt={uni?.name} className="w-full h-full object-cover" loading="lazy" />
@@ -93,9 +95,15 @@ const Single_university = () => {
                   </p>
 
                   <div className="flex items-center gap-2 mt-auto">
-                    <a href={uni?.websiteUrl || '#'} target="_blank" rel="noreferrer" className="bg-[#8F0810] hover:bg-[#6a060b] text-white flex-1 text-[11px] font-bold py-2 rounded-full flex justify-center items-center gap-1 transition-colors">
+                    <a href={uni?.websiteUrl || '#'} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="bg-[#8F0810] hover:bg-[#6a060b] text-white flex-1 text-[11px] font-bold py-2 rounded-full flex justify-center items-center gap-1 transition-colors">
                       {t.visit}
                     </a>
+                    <button
+                      onClick={() => navigate(`/universities/${uni?.slug}`, { state: { citySlug, cityName: selectedCity } })}
+                      className="bg-[#274F94] hover:bg-[#1d3a73] text-white flex-1 text-[11px] font-bold py-2 rounded-full flex justify-center items-center gap-1 transition-colors"
+                    >
+                      {t.details}
+                    </button>
                   </div>
                 </div>
               </motion.div>
